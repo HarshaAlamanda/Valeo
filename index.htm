@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valeo Validation | v46 Detailed Failure</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #84BD00; 
+            --dark: #111827;
+            --bg: #F3F4F6;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --text: #1F2937;
+            --text-muted: #6B7280;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --sidebar-bg: #1F2937;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0F172A;
+            --surface: #1E293B;
+            --border: #334155;
+            --text: #F8FAFC;
+            --text-muted: #94A3B8;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            --sidebar-bg: #0F172A;
+            --dark: #000000;
+        }
+
+        body {
+            margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg); color: var(--text);
+            display: flex; height: 100vh; overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px; background: var(--sidebar-bg); color: white;
+            display: flex; flex-direction: column; padding: 25px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.1); z-index: 20;
+            flex-shrink: 0;
+        }
+        .brand {
+            font-size: 1.5rem; font-weight: 300; margin-bottom: 40px;
+            padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); letter-spacing: 1px;
+        }
+        .brand strong { color: var(--primary); font-weight: 800; }
+        
+        .nav-item {
+            padding: 12px 15px; margin-bottom: 8px; border-radius: 8px;
+            cursor: pointer; display: flex; align-items: center; gap: 12px;
+            color: #9CA3AF; transition: 0.2s; font-weight: 500;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(132, 189, 0, 0.15); color: var(--primary); }
+        .nav-item.unsaved { color: #F59E0B; }
+        .nav-item i { width: 20px; text-align: center; }
+
+        .theme-switch {
+            margin-top: auto; display: flex; align-items: center; justify-content: space-between;
+            padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .theme-switch:hover { background: rgba(255,255,255,0.1); }
+        .theme-switch span { font-size: 0.85rem; color: #ccc; font-weight: 600; }
+        .toggle-icon { font-size: 1.2rem; color: #fbbf24; }
+
+        /* MAIN LAYOUT */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+        /* HEADER */
+        .header {
+            background: var(--surface); padding: 15px 30px; 
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            gap: 20px; min-width: 800px;
+        }
+        .header-left, .header-right { flex: 0 0 auto; display: flex; align-items: center; }
+        .header-center { flex: 1; display: flex; justify-content: center; max-width: 600px; }
+
+        .search-box { position: relative; width: 100%; }
+        .search-box input {
+            width: 100%; padding: 10px 15px 10px 40px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg); color: var(--text);
+            transition: 0.2s; font-size: 0.9rem; box-sizing: border-box;
+        }
+        .search-box input:focus { border-color: var(--primary); outline: none; background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .search-box i { position: absolute; left: 15px; top: 12px; color: var(--text-muted); }
+
+        .sheet-controls {
+            display: flex; align-items: center; gap: 10px; position: relative;
+        }
+        .multi-select-btn {
+            background: var(--bg); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border);
+            cursor: pointer; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px;
+            min-width: 150px; justify-content: space-between;
+        }
+        .multi-select-btn:hover { background: rgba(0,0,0,0.05); }
+        
+        .multi-select-dropdown {
+            position: absolute; top: 100%; left: 0; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 100;
+            width: 250px; max-height: 300px; overflow-y: auto; display: none; padding: 5px; margin-top: 5px;
+        }
+        .sheet-option {
+            padding: 8px 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-radius: 4px;
+            transition: 0.2s; color: var(--text);
+        }
+        .sheet-option:hover { background: var(--bg); }
+        .sheet-option input { cursor: pointer; accent-color: var(--primary); transform: scale(1.2); }
+        .sheet-option span { font-size: 0.9rem; }
+
+        .tester-input-group {
+            display: flex; align-items: center; gap: 8px; 
+            border-left: 1px solid var(--border); padding-left: 12px; margin-left: 5px;
+        }
+        .tester-input-group i { color: var(--text-muted); font-size: 0.8rem; }
+        .tester-input-group input {
+            border: none; background: transparent; font-size: 0.9rem; color: var(--text); width: 120px;
+            transition: 0.2s; padding: 5px 0;
+        }
+        .tester-input-group input:focus { outline: none; color: var(--primary); }
+
+        .btn {
+            border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; display: flex; gap: 8px; align-items: center; transition: 0.2s; white-space: nowrap;
+        }
+        .btn-dark { background: var(--dark); color: white; }
+        .btn-dark:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-link-hint { background: transparent; color: var(--text-muted); font-size: 1.2rem; padding: 5px; }
+        .btn-link-hint:hover { color: var(--primary); }
+
+        /* CONTENT */
+        .content { padding: 30px; overflow-y: auto; height: 100%; padding-bottom: 120px; }
+
+        /* STATS */
+        .stats-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-card {
+            background: var(--surface); padding: 20px; border-radius: 12px;
+            border: 1px solid var(--border); box-shadow: var(--shadow);
+            cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden; opacity: 0.7;
+        }
+        .stat-card:hover { transform: translateY(-3px); opacity: 1; border-color: var(--primary); }
+        .stat-card.active { opacity: 1; border-left: 4px solid var(--primary); background: var(--surface); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin: 0; font-size: 2rem; color: var(--text); font-weight: 800; }
+        .stat-card p { margin: 5px 0 0; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .hl-blue { border-top: 4px solid #3B82F6; }
+        .hl-green { border-top: 4px solid var(--primary); }
+        .hl-red { border-top: 4px solid #EF4444; }
+        .hl-orange { border-top: 4px solid #F59E0B; }
+
+        /* GLOBAL INPUTS */
+        .global-box {
+            background: var(--surface); padding: 25px; border-radius: 12px;
+            border: 1px solid var(--border); margin-bottom: 20px; box-shadow: var(--shadow);
+        }
+        .box-title { font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: var(--text); }
+        .input-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px; }
+        .input-grid-wide { display: grid; grid-template-columns: 2fr; gap: 15px; }
+        .field label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+        .field input, .field select {
+            width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; 
+            background: var(--bg); color: var(--text); box-sizing: border-box; transition: 0.2s;
+        }
+        .field input:focus, .field select:focus { border-color: var(--primary); outline: none; background: var(--surface); }
+
+        /* CALENDAR */
+        .date-picker-wrapper { position: relative; }
+        .date-input-container { position: relative; }
+        .clear-date-btn {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: #9CA3AF; cursor: pointer;
+            font-size: 1rem; display: none;
+        }
+        .clear-date-btn:hover { color: #EF4444; }
+        .calendar-popup {
+            position: absolute; top: 100%; left: 0; width: 300px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1000;
+            display: none; padding: 15px; margin-top: 5px;
+        }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .calendar-header button { background: none; border: none; cursor: pointer; color: var(--text); font-weight: bold; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day { padding: 8px; font-size: 0.85rem; cursor: pointer; border-radius: 6px; transition: 0.2s; color: var(--text); }
+        .cal-day:hover { background: var(--bg); }
+        .cal-day.selected { background: var(--primary); color: white; font-weight: bold; }
+        .cal-day.empty { pointer-events: none; }
+        .week-day { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+
+        /* VIEW MODE TOGGLE */
+        .view-mode-container {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;
+            position: sticky; top: -30px; background: var(--bg); z-index: 10; padding: 10px 0;
+        }
+        .view-mode-bar {
+            display: flex; background: var(--surface); padding: 5px; border-radius: 8px; border: 1px solid var(--border); box-shadow: var(--shadow);
+        }
+        .view-btn {
+            padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-muted); transition: 0.2s;
+        }
+        .view-btn.active { background: var(--bg); color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .view-btn:hover:not(.active) { color: var(--text); }
+
+        /* ROWS */
+        .row-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 100px; }
+        .clean-row {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+            overflow: hidden; transition: transform 0.2s; box-shadow: var(--shadow);
+            border-left: 4px solid transparent;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .clean-row:hover { transform: translateY(-2px); }
+        .clean-row.st-Passed { border-left-color: var(--primary); }
+        .clean-row.st-Failed { border-left-color: #EF4444; }
+        .clean-row.st-Undefined { border-left-color: #F59E0B; }
+        .clean-row.st-NA { border-left-color: #9CA3AF; }
+
+        .row-head {
+            padding: 12px 20px; background: var(--bg); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 15px;
+        }
+        .row-check { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+        .tc-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .tc-name { font-weight: 600; color: var(--text); font-size: 0.95rem; }
+        .assigned-info {
+            font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 15px;
+            background: rgba(0,0,0,0.03); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.05); width: fit-content;
+        }
+        .assigned-info span i { margin-right: 5px; color: var(--primary); }
+        .badge { padding: 4px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: white; }
+        .bg-pass { background: var(--primary); }
+        .bg-fail { background: #EF4444; }
+        .bg-warn { background: #F59E0B; }
+        .bg-na { background: #9CA3AF; }
+        .row-body { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+
+        /* FAB */
+        .fab-container { position: fixed; bottom: 30px; right: 30px; z-index: 100; display: none; }
+        .fab {
+            background: linear-gradient(135deg, #1b5e20 0%, #43a047 100%);
+            color: white; padding: 12px 24px; border-radius: 50px; 
+            font-family: 'Segoe UI', sans-serif; font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
+            letter-spacing: 0.5px; border: none; cursor: pointer; 
+            box-shadow: 0 8px 20px rgba(27, 94, 32, 0.4); 
+            display: flex; align-items: center; gap: 10px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .fab:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 25px rgba(27, 94, 32, 0.5); }
+        .fab:active { transform: translateY(-1px); }
+
+        /* BULK BAR */
+        .bulk-bar {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--dark); color: white; padding: 10px 20px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 200;
+            display: none; align-items: center; gap: 15px; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        .bulk-count { font-weight: 700; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; }
+        .bulk-input {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;
+            padding: 8px 12px; border-radius: 6px; width: 150px; outline: none; font-size: 0.9rem;
+        }
+        .bulk-input::placeholder { color: rgba(255,255,255,0.5); }
+        .bulk-btn {
+            background: var(--primary); border: none; padding: 8px 16px; border-radius: 6px;
+            color: white; font-weight: 600; cursor: pointer; font-size: 0.85rem;
+        }
+        .bulk-btn:hover { opacity: 0.9; }
+        .bulk-close { background: none; border: none; color: #9CA3AF; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
+        .bulk-close:hover { color: white; }
+
+        .empty-state { text-align: center; padding: 100px 0; color: var(--text-muted); opacity: 0.6; }
+        select option { background-color: var(--surface); color: var(--text); }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand"><strong>VALEO</strong> VALIDATION</div>
+        <div class="nav-item active" id="navDash"><i class="fa-solid fa-gauge-high"></i> Dashboard</div>
+        <div class="nav-item" onclick="openFile()"><i class="fa-solid fa-folder-open"></i> Open File</div>
+        <div class="nav-item" onclick="copySummary()"><i class="fa-regular fa-copy"></i> Copy Summary</div>
+        <div class="theme-switch" onclick="toggleTheme()">
+            <span>Dark Mode</span>
+            <i class="fa-solid fa-moon toggle-icon" id="themeIcon"></i>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <div class="header-left">
+                <button class="btn btn-dark" onclick="openFile()"><i class="fa-solid fa-upload"></i> Load Excel</button>
+                <button class="btn btn-link-hint" onclick="alert('Google Sheets links cannot be opened directly due to security. Please File > Download > Excel in Google Sheets first.')" title="Using Google Sheets?"><i class="fa-brands fa-google"></i></button>
+            </div>
+            <div class="header-center">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search test cases..." onkeyup="applyFilters()">
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="sheet-controls" id="sheetControls" style="display:none">
+                    <div class="multi-select-btn" onclick="toggleSheetDropdown()">
+                        <span id="sheetBtnLabel">Select Sheets</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="multi-select-dropdown" id="sheetList"></div>
+                    <div class="tester-input-group">
+                        <i class="fa-solid fa-user-pen"></i>
+                        <input type="text" id="sheetTesterInput" placeholder="Name 1, Name 2..." onkeyup="updateSheetTester()">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="stats-container">
+                <div class="stat-card hl-blue active" onclick="setFilterStatus('All', this)">
+                    <h3 id="cTotal">0</h3><p>Total Items</p>
+                </div>
+                <div class="stat-card hl-green" onclick="setFilterStatus('Passed', this)">
+                    <h3 id="cPass">0</h3><p>Passed</p>
+                </div>
+                <div class="stat-card hl-red" onclick="setFilterStatus('Failed', this)">
+                    <h3 id="cFail">0</h3><p>Failed</p>
+                </div>
+                <div class="stat-card hl-orange" onclick="setFilterStatus('Pending', this)">
+                    <h3 id="cPend">0</h3><p>Undefined</p>
+                </div>
+            </div>
+
+            <div class="global-box">
+                <div class="box-title"><i class="fa-solid fa-sliders"></i> Global Attributes</div>
+                <div class="input-grid">
+                    <div class="field"><label>HW Version</label><input type="text" id="g_hw" onkeyup="renderRows()" placeholder="Sample C"></div>
+                    <div class="field"><label>SW Version</label><input type="text" id="g_sw" onkeyup="renderRows()" placeholder="R430"></div>
+                    <div class="field"><label>E2P Version</label><input type="text" id="g_e2p" onkeyup="renderRows()" placeholder="J10"></div>
+                    <div class="field"><label>Test Type</label>
+                        <select id="g_type" onchange="renderRows()">
+                            <option value="">(Keep Existing)</option>
+                            <option value="Manual">Manual</option>
+                            <option value="Automatic">Automatic</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-grid-wide">
+                    <div class="field date-picker-wrapper">
+                        <label>Global Dates (Smart Distribution)</label>
+                        <div class="date-input-container">
+                            <input type="text" id="g_dates" placeholder="Select dates..." readonly onclick="toggleCalendar()">
+                            <button class="clear-date-btn" id="clearDatesBtn" onclick="clearAllDates()" title="Clear Selection">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div class="info-tip">Manual selection overrides file dates. Clear selection to use file dates.</div>
+                        <div class="calendar-popup" id="calPopup">
+                            <div class="calendar-header">
+                                <button onclick="changeMonth(-1)"><</button>
+                                <span id="calMonthYear">Month Year</span>
+                                <button onclick="changeMonth(1)">></button>
+                            </div>
+                            <div class="calendar-grid">
+                                <div class="week-day">Su</div><div class="week-day">Mo</div><div class="week-day">Tu</div><div class="week-day">We</div><div class="week-day">Th</div><div class="week-day">Fr</div><div class="week-day">Sa</div>
+                            </div>
+                            <div class="calendar-grid" id="calDays"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-mode-container">
+                <span style="font-weight: 700; color: var(--text-muted); font-size: 0.9rem;">View Mode:</span>
+                <div class="view-mode-bar">
+                    <div class="view-btn active" onclick="setFilterState('All', this)">All Rows</div>
+                    <div class="view-btn" onclick="setFilterState('Unfilled', this)">Action Required</div>
+                    <div class="view-btn" onclick="setFilterState('Filled', this)">Done</div>
+                </div>
+            </div>
+
+            <div id="rowsContainer" class="row-list">
+                <div class="empty-state">
+                    <i class="fa-regular fa-folder-open" style="font-size: 4rem; margin-bottom: 20px;"></i><br>
+                    <h3>No File Loaded</h3>
+                    <p>Load an Excel file to begin validation.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="fab-container" id="saveBtnContainer">
+        <button class="fab" id="saveBtn" onclick="saveBackToFile()">
+            <i class="fa-solid fa-check"></i> COMMIT CHANGES
+        </button>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+        <span class="bulk-count" id="bulkCount">0 Selected</span>
+        <input type="text" class="bulk-input" id="bulkTester" placeholder="Assign Name...">
+        <input type="text" class="bulk-input" id="bulkDate" placeholder="DD/MM/YYYY">
+        <button class="bulk-btn" onclick="applyBulkEdit()">Apply</button>
+        <button class="bulk-close" onclick="deselectAll()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+<script>
+    let fileHandle, workbook;
+    let rowsToUpdate = []; 
+    let currentStatus = 'All'; 
+    let currentState = 'All'; 
+    let currentStats = { total: 0, pass: 0, fail: 0, pend: 0 };
+    let selectedSheets = [];
+    let selectedDates = [];
+    let currentCalDate = new Date();
+    let sheetTesters = {}; 
+    let lastCheckedIndex = -1;
+    let selectedIndices = new Set(); 
+
+    function notify(msg, type='success') {
+        Toastify({ text: msg, duration: 3000, style: { background: type === 'error' ? "#EF4444" : "#2E7D32", borderRadius: "8px" } }).showToast();
+    }
+
+    function formatExcelDate(val) {
+        if (!val) return "";
+        let dateObj = val;
+        if (!(val instanceof Date)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) dateObj = d;
+            else return val; 
+        }
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const yyyy = dateObj.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById('themeIcon');
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.removeAttribute('data-theme');
+            icon.className = 'fa-solid fa-moon toggle-icon';
+            icon.style.color = '#fbbf24';
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            icon.className = 'fa-solid fa-sun toggle-icon';
+            icon.style.color = '#fff';
+        }
+    }
+
+    function markDirty() {
+        document.getElementById('navDash').classList.add('unsaved');
+        document.getElementById('navDash').innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Editing...';
+        setTimeout(applyFilters, 500); 
+    }
+
+    // --- MULTI SHEET LOGIC ---
+    function toggleSheetDropdown() {
+        const d = document.getElementById('sheetList');
+        d.style.display = d.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function toggleSheetSelection(sheetName) {
+        if(selectedSheets.includes(sheetName)) selectedSheets = selectedSheets.filter(s => s !== sheetName);
+        else selectedSheets.push(sheetName);
+        updateSheetLabel();
+        loadSelectedSheets();
+    }
+
+    function updateSheetLabel() {
+        const label = document.getElementById('sheetBtnLabel');
+        if(selectedSheets.length === 0) label.innerText = "Select Sheets";
+        else if(selectedSheets.length === 1) label.innerText = selectedSheets[0];
+        else label.innerText = `${selectedSheets.length} Sheets Selected`;
+    }
+
+    function updateSheetTester() {
+        const testerName = document.getElementById('sheetTesterInput').value;
+        selectedSheets.forEach(sheet => {
+            sheetTesters[sheet] = testerName;
+        });
+        markDirty();
+        renderRows(); 
+    }
+
+    // --- CALENDAR LOGIC ---
+    function toggleCalendar() {
+        const popup = document.getElementById('calPopup');
+        popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+        if(popup.style.display === 'block') renderCalendar();
+    }
+
+    function changeMonth(dir) {
+        currentCalDate.setMonth(currentCalDate.getMonth() + dir);
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const year = currentCalDate.getFullYear();
+        const month = currentCalDate.getMonth();
+        document.getElementById('calMonthYear').innerText = new Date(year, month).toLocaleDateString('default', { month: 'long', year: 'numeric' });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const container = document.getElementById('calDays');
+        container.innerHTML = '';
+
+        for(let i=0; i<firstDay; i++) container.innerHTML += '<div class="cal-day empty"></div>';
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const dateStr = `${String(d).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}`;
+            const isSelected = selectedDates.includes(dateStr);
+            const el = document.createElement('div');
+            el.className = `cal-day ${isSelected ? 'selected' : ''}`;
+            el.innerText = d;
+            el.onclick = (e) => { e.stopPropagation(); selectDate(dateStr); };
+            container.appendChild(el);
+        }
+    }
+
+    function selectDate(dateStr) {
+        if(selectedDates.includes(dateStr)) selectedDates = selectedDates.filter(d => d !== dateStr);
+        else selectedDates.push(dateStr);
+        selectedDates.sort((a,b) => {
+            const [d1, m1, y1] = a.split('/');
+            const [d2, m2, y2] = b.split('/');
+            return new Date(y1, m1-1, d1) - new Date(y2, m2-1, d2);
+        });
+        updateDateInput();
+        renderCalendar();
+        renderRows(); 
+        markDirty();
+    }
+
+    function clearAllDates() {
+        selectedDates = [];
+        updateDateInput();
+        if(document.getElementById('calPopup').style.display === 'block') renderCalendar();
+        renderRows();
+        markDirty();
+    }
+
+    function updateDateInput() {
+        const inp = document.getElementById('g_dates');
+        const btn = document.getElementById('clearDatesBtn');
+        inp.value = selectedDates.join(', ');
+        btn.style.display = selectedDates.length > 0 ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sheet-controls')) document.getElementById('sheetList').style.display = 'none';
+        if (!e.target.closest('.date-picker-wrapper')) document.getElementById('calPopup').style.display = 'none';
+    });
+
+    // --- BULK ACTION ---
+    function handleRowCheck(index, event) {
+        if (event.shiftKey && lastCheckedIndex !== -1) {
+            const start = Math.min(lastCheckedIndex, index);
+            const end = Math.max(lastCheckedIndex, index);
+            for (let i = start; i <= end; i++) {
+                const cb = document.getElementById(`cb_${i}`);
+                if(cb && cb.closest('.item-row').style.display !== 'none') {
+                    cb.checked = true;
+                    selectedIndices.add(i);
+                }
+            }
+        } else {
+            const cb = document.getElementById(`cb_${index}`);
+            if (cb.checked) selectedIndices.add(index);
+            else selectedIndices.delete(index);
+            lastCheckedIndex = index;
+        }
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        const bar = document.getElementById('bulkBar');
+        if (selectedIndices.size > 0) {
+            bar.style.display = 'flex';
+            document.getElementById('bulkCount').innerText = `${selectedIndices.size} Selected`;
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    function deselectAll() {
+        selectedIndices.clear();
+        document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+        updateBulkBar();
+    }
+
+    function applyBulkEdit() {
+        const tester = document.getElementById('bulkTester').value;
+        const date = document.getElementById('bulkDate').value;
+        selectedIndices.forEach(index => {
+            const item = rowsToUpdate[index];
+            if (item) {
+                const tInput = document.getElementById(`tester_${item.uniqueId}`);
+                const dInput = document.getElementById(`date_${item.uniqueId}`);
+                if (tInput && tester) tInput.value = tester;
+                if (dInput && date) dInput.value = date;
+                markDirty();
+            }
+        });
+        notify("Bulk Updated!");
+    }
+
+    // --- FILE OPS ---
+    async function openFile() {
+        try {
+            [fileHandle] = await window.showOpenFilePicker({
+                types: [{ description: 'Excel Files', accept: {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']} }]
+            });
+            const file = await fileHandle.getFile();
+            const buffer = await file.arrayBuffer();
+            workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(buffer);
+            
+            const list = document.getElementById('sheetList');
+            list.innerHTML = '';
+            
+            workbook.eachSheet((sheet) => {
+                const div = document.createElement('div');
+                div.className = 'sheet-option';
+                div.innerHTML = `<input type="checkbox" value="${sheet.name}"><span>${sheet.name}</span>`;
+                div.onclick = (e) => {
+                    if(e.target.tagName !== 'INPUT') {
+                        const cb = div.querySelector('input');
+                        cb.checked = !cb.checked;
+                        toggleSheetSelection(sheet.name);
+                    } else {
+                        toggleSheetSelection(sheet.name);
+                    }
+                };
+                list.appendChild(div);
+            });
+
+            document.getElementById('sheetControls').style.display = 'flex';
+            sheetTesters = {}; 
+            selectedSheets = [];
+            selectedIndices.clear();
+            updateSheetLabel();
+            updateBulkBar();
+            
+            if(list.firstChild) list.firstChild.click();
+            notify("File Loaded Successfully!");
+        } catch (e) { console.error(e); notify("Use Desktop Chrome/Edge", "error"); }
+    }
+
+    function loadSelectedSheets() {
+        if (selectedSheets.length === 0) {
+            document.getElementById('rowsContainer').innerHTML = '<div class="empty-state">Select sheets to view data.</div>';
+            return;
+        }
+
+        const firstSheet = workbook.getWorksheet(selectedSheets[0]);
+        let headerMap = {};
+        
+        if(firstSheet) {
+            let foundValues = { hw: '', sw: '', e2p: '', type: '', tester: '' };
+            firstSheet.getRow(1).eachCell((cell, colNumber) => {
+                const h = cell.value ? cell.value.toString().trim() : "";
+                if(h) {
+                    headerMap[h] = colNumber;
+                    if(h === "E2P") headerMap["E2P Version"] = colNumber;
+                    if(h === "E2P Version") headerMap["E2P"] = colNumber;
+                }
+            });
+            for(let i=2; i<= Math.min(10, firstSheet.rowCount); i++) {
+                const row = firstSheet.getRow(i);
+                const getVal = (key) => {
+                    let idx = headerMap[key];
+                    const val = idx ? row.getCell(idx).value : null;
+                    return val ? val.toString().trim() : "";
+                };
+                if (!foundValues.hw) foundValues.hw = getVal("HW Version");
+                if (!foundValues.sw) foundValues.sw = getVal("SW Version");
+                if (!foundValues.e2p) foundValues.e2p = getVal("E2P Version");
+                if (!foundValues.type) foundValues.type = getVal("Actual Test Type");
+            }
+            if(foundValues.hw) document.getElementById('g_hw').value = foundValues.hw;
+            if(foundValues.sw) document.getElementById('g_sw').value = foundValues.sw;
+            if(foundValues.e2p) document.getElementById('g_e2p').value = foundValues.e2p;
+            if(foundValues.type) document.getElementById('g_type').value = foundValues.type;
+            
+            if(!document.getElementById('sheetTesterInput').value) {
+                document.getElementById('sheetTesterInput').value = foundValues.tester || "";
+            }
+        }
+
+        renderRows();
+    }
+
+    function renderRows() {
+        const container = document.getElementById('rowsContainer');
+        container.innerHTML = '';
+        rowsToUpdate = [];
+        selectedIndices.clear(); 
+        updateBulkBar();
+        currentStats = { total: 0, pass: 0, fail: 0, pend: 0 };
+
+        let allRows = [];
+
+        selectedSheets.forEach(sheetName => {
+            const worksheet = workbook.getWorksheet(sheetName);
+            if (!worksheet) return;
+
+            let sheetHeaderMap = {};
+            worksheet.getRow(1).eachCell((cell, colNumber) => {
+                const h = cell.value ? cell.value.toString().trim() : "";
+                if(h) {
+                    sheetHeaderMap[h] = colNumber;
+                    if(h === "E2P") sheetHeaderMap["E2P Version"] = colNumber;
+                    if(h === "E2P Version") sheetHeaderMap["E2P"] = colNumber;
+                }
+            });
+
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) return;
+                
+                const getVal = (key) => {
+                    let idx = sheetHeaderMap[key];
+                    const val = idx ? row.getCell(idx).value : null;
+                    if(key === "Date") return formatExcelDate(val);
+                    return val ? val.toString().trim() : "";
+                };
+
+                const status = getVal("Status");
+                if (!status || status === "Not Executed") return;
+
+                const uniqueId = `${sheetName}_${rowNumber}`.replace(/\s/g, '_');
+                const rowObj = {
+                    sheetName: sheetName,
+                    rowNumber: rowNumber,
+                    status: status,
+                    uniqueId: uniqueId,
+                    tcName: getVal("Test Case Name"),
+                    fileDate: getVal("Date"),
+                    fileTester: getVal("Executed By"),
+                    bug: getVal("Bug ID"),
+                    step: getVal("Failed step number"),
+                    res: getVal("Result obtained"),
+                    com: getVal("Comment"),
+                    blk: getVal("Blockage Reason")
+                };
+                
+                allRows.push(rowObj);
+            });
+        });
+
+        const activeRows = allRows.filter(r => ["Passed", "Failed"].includes(r.status));
+        const chunkSize = selectedDates.length > 0 ? Math.ceil(activeRows.length / selectedDates.length) : 0;
+        let pfIndex = 0;
+
+        // Tester Distribution
+        let testerInputRaw = document.getElementById('sheetTesterInput').value || "";
+        let testerArray = testerInputRaw.split(',').map(t => t.trim()).filter(t => t !== "");
+        const testerChunkSize = testerArray.length > 0 ? Math.ceil(activeRows.length / testerArray.length) : 0;
+
+        allRows.forEach((row) => {
+            currentStats.total++;
+            if(row.status === "Passed") currentStats.pass++;
+            if(row.status === "Failed") currentStats.fail++;
+
+            let assignedDate = row.fileDate;
+            let calculatedTester = row.fileTester;
+
+            if(["Passed", "Failed"].includes(row.status)) {
+                if(selectedDates.length > 0) {
+                    const dateIndex = Math.floor(pfIndex / chunkSize);
+                    assignedDate = selectedDates[Math.min(dateIndex, selectedDates.length - 1)];
+                }
+                
+                if(testerArray.length > 0) {
+                    const testerIndex = Math.floor(pfIndex / testerChunkSize);
+                    calculatedTester = testerArray[Math.min(testerIndex, testerArray.length - 1)];
+                } else if (sheetTesters[row.sheetName]) {
+                    calculatedTester = sheetTesters[row.sheetName];
+                }
+
+                pfIndex++;
+            }
+
+            let displayTester = calculatedTester;
+            let displayDate = assignedDate;
+
+            let rowAssignedInfo = "";
+            if (["Passed", "Failed"].includes(row.status)) {
+                rowAssignedInfo = `<div class="assigned-info">
+                    <span style="font-weight:bold; color:var(--primary)">[${row.sheetName}]</span>
+                    <span><i class="fa-solid fa-user"></i> ${displayTester}</span>
+                    <span><i class="fa-solid fa-calendar"></i> ${displayDate}</span>
+                </div>`;
+            } else {
+                 rowAssignedInfo = `<div class="assigned-info"><span style="font-weight:bold; color:var(--primary)">[${row.sheetName}]</span></div>`;
+            }
+
+            let inputs = "";
+            let badgeClass = "bg-na";
+
+            if (row.status === "Passed") {
+                badgeClass = "bg-pass";
+                inputs = `
+                    <div class="field"><label>Executed By</label><input type="text" id="tester_${row.uniqueId}" onkeyup="markDirty()" value="${displayTester}"></div>
+                    <div class="field"><label>Date</label><input type="text" id="date_${row.uniqueId}" onkeyup="markDirty()" value="${displayDate}"></div>`;
+            } 
+            else if (row.status === "Failed") {
+                badgeClass = "bg-fail";
+                inputs = `
+                    <div class="field"><label>Executed By</label><input type="text" id="tester_${row.uniqueId}" onkeyup="markDirty()" value="${displayTester}"></div>
+                    <div class="field"><label>Date</label><input type="text" id="date_${row.uniqueId}" onkeyup="markDirty()" value="${displayDate}"></div>
+                    <div class="field"><label>Failed Step No</label><input type="text" id="step_${row.uniqueId}" onkeyup="markDirty()" value="${row.step}"></div>
+                    <div class="field"><label>Result Obtained</label><input type="text" id="res_${row.uniqueId}" onkeyup="markDirty()" value="${row.res}"></div>
+                    <div class="field"><label>Bug ID</label><input type="text" id="bug_${row.uniqueId}" onkeyup="markDirty()" value="${row.bug}"></div>`;
+            } 
+            else if (["Undefined", "N/A"].includes(row.status)) {
+                badgeClass = "bg-warn";
+                inputs = `
+                    <div class="field"><label>Comment</label><input type="text" id="com_${row.uniqueId}" onkeyup="markDirty()" value="${row.com}"></div>
+                    <div class="field"><label>Reason</label><input type="text" id="blk_${row.uniqueId}" onkeyup="markDirty()" value="${row.blk}" placeholder="Reason"></div>`;
+            }
+
+            // ADD TO MASTER LIST FOR FILTERING & SAVING
+            const rowIndex = rowsToUpdate.push({
+                ...row,
+                uniqueId: row.uniqueId,
+                calcDate: displayDate,
+                calcTester: displayTester
+            }) - 1;
+
+            let isFilled = false;
+            if(row.status === "Passed") isFilled = true;
+            else if(row.status === "Failed") isFilled = (row.bug && row.res);
+            else if(["Undefined", "N/A"].includes(row.status)) isFilled = (row.com && row.blk);
+
+            const html = `
+                <div class="clean-row item-row st-${row.status.replace("/", "")}" data-status="${row.status}" data-filled="${isFilled ? 'true' : 'false'}">
+                    <div class="row-head">
+                        <input type="checkbox" class="row-check" id="cb_${rowIndex}" onclick="handleRowCheck(${rowIndex}, event)">
+                        <div class="tc-info">
+                            <span class="tc-name">Row ${row.rowNumber}: ${row.tcName}</span>
+                            ${rowAssignedInfo}
+                        </div>
+                        <span class="badge ${badgeClass}">${row.status}</span>
+                    </div>
+                    <div class="row-body">${inputs}</div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        document.getElementById('cTotal').innerText = currentStats.total;
+        document.getElementById('cPass').innerText = currentStats.pass;
+        document.getElementById('cFail').innerText = currentStats.fail;
+        const undefCount = rowsToUpdate.filter(r => ["Undefined", "N/A"].includes(r.status)).length;
+        document.getElementById('cPend').innerText = undefCount;
+
+        document.getElementById('saveBtnContainer').style.display = "block";
+        applyFilters(); 
+    }
+
+    function setFilterStatus(status, el) {
+        currentStatus = status;
+        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        applyFilters();
+    }
+
+    function setFilterState(state, el) {
+        currentState = state;
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const rowStatus = row.dataset.status;
+            const isFilled = isRowActuallyFilled(row); 
+            
+            let statusMatch = false;
+            if (currentStatus === 'All') statusMatch = true;
+            else if (currentStatus === 'Pending') statusMatch = (rowStatus === 'Undefined' || rowStatus === 'N/A');
+            else statusMatch = (rowStatus === currentStatus);
+
+            let stateMatch = false;
+            if (currentState === 'All') stateMatch = true;
+            else if (currentState === 'Filled') stateMatch = isFilled;
+            else if (currentState === 'Unfilled') stateMatch = !isFilled;
+
+            const textMatch = row.innerText.toLowerCase().includes(term);
+            row.style.display = (statusMatch && stateMatch && textMatch) ? "block" : "none";
+        });
+    }
+
+    function isRowActuallyFilled(rowElement) {
+        const inputs = rowElement.querySelectorAll('input');
+        if(inputs.length === 0) return true; 
+        let allFilled = true;
+        inputs.forEach(inp => { if(inp.value.trim() === "") allFilled = false; });
+        return allFilled;
+    }
+
+    function filterText() { applyFilters(); }
+
+    function copySummary() {
+        navigator.clipboard.writeText(`Total:${currentStats.total} Pass:${currentStats.pass} Fail:${currentStats.fail} Undef:${document.getElementById('cPend').innerText}`);
+        notify("Summary Copied!");
+    }
+
+    async function saveBackToFile() {
+        const btn = document.getElementById('saveBtn');
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> SAVING...";
+        
+        try {
+            const g_hw = document.getElementById('g_hw').value;
+            const g_sw = document.getElementById('g_sw').value;
+            const g_e2p = document.getElementById('g_e2p').value;
+            const g_type = document.getElementById('g_type').value;
+            
+            let sheetMaps = {};
+            selectedSheets.forEach(s => {
+                const ws = workbook.getWorksheet(s);
+                let map = {};
+                ws.getRow(1).eachCell((cell, colNumber) => {
+                    const h = cell.value ? cell.value.toString().trim() : "";
+                    if(h) {
+                        map[h] = colNumber;
+                        if(h === "E2P") map["E2P Version"] = colNumber;
+                        if(h === "E2P Version") map["E2P"] = colNumber;
+                    }
+                });
+                sheetMaps[s] = map;
+            });
+
+            const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
+
+            rowsToUpdate.forEach(item => {
+                const worksheet = workbook.getWorksheet(item.sheetName);
+                const map = sheetMaps[item.sheetName];
+                const r = item.rowNumber;
+                
+                const write = (colName, val) => {
+                    if (map[colName]) worksheet.getRow(r).getCell(map[colName]).value = val;
+                };
+
+                if (["Passed", "Failed"].includes(item.status)) {
+                    if(g_hw) write("HW Version", g_hw);
+                    if(g_sw) write("SW Version", g_sw);
+                    if(g_e2p) write("E2P Version", g_e2p);
+                    if(g_type) write("Actual Test Type", g_type);
+                    
+                    let t = getVal(`tester_${item.uniqueId}`);
+                    // If the input box value matches the calculated one or is just "filled", use it.
+                    // Actually, since we prepopulated the input `value` with `calcTester` in renderRows,
+                    // getting the value here gets exactly what is shown on screen (whether auto or manual).
+                    
+                    let d = getVal(`date_${item.uniqueId}`);
+                    
+                    if(t) write("Executed By", t); 
+                    if(d) write("Date", d);         
+                }
+
+                if (item.status === "Failed") {
+                    const bug = getVal(`bug_${item.uniqueId}`);
+                    const step = getVal(`step_${item.uniqueId}`);
+                    const res = getVal(`res_${item.uniqueId}`);
+                    if(bug) write("Bug ID", bug);
+                    if(step) write("Failed step number", step);
+                    if(res) write("Result obtained", res);
+                }
+                if (item.status === "Undefined" || item.status === "N/A") {
+                    const com = getVal(`com_${item.uniqueId}`);
+                    const blk = getVal(`blk_${item.uniqueId}`);
+                    if(com) write("Comment", com);
+                    if(blk) write("Blockage Reason", blk);
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const writable = await fileHandle.createWritable();
+            await writable.write(buffer);
+            await writable.close();
+            
+            // confetti removed for clean professional
+            notify("File Updated Successfully!");
+            document.getElementById('navDash').classList.remove('unsaved');
+            document.getElementById('navDash').innerHTML = '<i class="fa-solid fa-gauge-high"></i> Dashboard';
+            
+            // INSTANT SYNC
+            renderRows();
+
+        } catch (e) { console.error(e); notify("Error Saving File", "error"); }
+        btn.innerHTML = oldHtml;
+    }
+</script>
+
+</body>
+</html>
